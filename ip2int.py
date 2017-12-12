@@ -20,6 +20,8 @@ def GetIPs(cidr):
         print "ZADD cidr:ipv4 %s %s\n" % (ip.last, ip.first)
         print "Remove CIDR:"
         print "ZREM cidr:ipv4 %s\n" % ip.first
+    else:
+        print "mask missing: %s/? <---" % ip.network
 
 
 def main():
