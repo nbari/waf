@@ -7,6 +7,14 @@ local ip                       = ngx.var.remote_addr
 local ip_blacklist             = ngx.shared.ip_blacklist
 local last_update_time         = ip_blacklist:get("last_update_time");
 
+function iptonumber(str)
+    local num = 0
+    for elem in str:gmatch("%d+") do
+        num = num * 256 + assert(tonumber(elem))
+    end
+    return num
+end
+
 -- block if ip found in the local nginx dict
 if ip_blacklist:get(ip) then
     ngx.log(ngx.DEBUG, "Banned IP detected and refused access: " .. ip);
@@ -38,6 +46,26 @@ if last_update_time == nil or last_update_time < ( ngx.now() - cache_ttl ) then
             -- add IP to the ip_blacklist dict inheriting the TTL form redis
             ip_blacklist:set(ip, true, ttl);
             ip_blacklist:set("last_update_time", ngx.now());
+            return
+        end
+
+        -- check if the IP is in a CIDR range
+        local ip_int = iptonumber(ip)
+        local res, err = red:zrangebyscore("cidr:index", ip_int, "+inf", "limit", "0", "1")
+        if err then
+            ngx.log(ngx.DEBUG, "Redis read error while retrieving ip_blacklist: " .. err);
+            return
+        end
+        -- check if we get a index
+        if #res > 0 then
+            local res, err = client:hget("cidr:" .. res[1], "network")
+            if err then return end
+            if ip_int  >= tonumber(res) then
+                -- add IP to the ip_blacklist dict inheriting the TTL form redis
+                -- need to fix the TTL probably, for now will be set to 1 week
+                ip_blacklist:set(ip, true, 604800);
+                ip_blacklist:set("last_update_time", ngx.now());
+            end
         end
     end
 end
