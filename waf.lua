@@ -53,7 +53,7 @@ if last_update_time == nil or last_update_time < ( ngx.now() - cache_ttl ) then
         local ip_int = iptonumber(ip)
         local res, err = red:zrangebyscore("cidr:index", ip_int, "+inf", "limit", "0", "1")
         if err then
-            ngx.log(ngx.DEBUG, "Redis read error while retrieving ip_blacklist: " .. err);
+            ngx.log(ngx.DEBUG, "Redis read error while retrieving cidr:index: " .. err);
             return
         end
         -- check if we get a index
