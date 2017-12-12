@@ -39,9 +39,11 @@ def GetIPs(url, redis_host, redis_port, redis_db, ttl):
                             "broadcast": int(ip.broadcast),
                             "network": int(ip.network)
                         }
+                        """ need to improve the way the hset and zadd are stored """
                         if red.hmset("cidr:%s" % i, data):
-                            print i
                             red.zadd("cidr:index", data['broadcast'], i)
+                    else:
+                        red.setex("ip:%s" % str(ip.network), ttl, 1)
 
 
 def main():
