@@ -27,23 +27,30 @@ def GetIPs(url, redis_host, redis_port, redis_db, ttl):
     red = redis.StrictRedis(host=redis_host,
                             port=redis_port,
                             db=redis_db)
-    r = requests.get(url, stream=True)
-    for line in r.iter_lines():
-        if line:
-            ips = ip_re.findall(line)
-            if ips:
-                for i in ips:
-                    ip = IPNetwork(i)
-                    if ip.size > 1:
-                        data = {
-                            "broadcast": int(ip.broadcast),
-                            "network": int(ip.network)
-                        }
-                        """ need to improve the way the hset and zadd are stored """
-                        if red.hmset("cidr:%s" % i, data):
-                            red.zadd("cidr:index", data['broadcast'], i)
-                    else:
-                        red.setex("ip:%s" % str(ip.network), ttl, 1)
+    if re.match(r'^https?://', url):
+        r = requests.get(url, stream=True)
+        for line in r.iter_lines():
+            if line:
+                ips = ip_re.findall(line)
+                if ips:
+                    Add(red, ips, ttl)
+    else:
+        with open(url) as f:
+            for line in f:
+                if line:
+                    ips = ip_re.findall(line)
+                    if ips:
+                        Add(red, ips, ttl)
+
+
+def Add(r, ips, ttl):
+    for i in ips:
+        ip = IPNetwork(i)
+        if ip.size > 1:
+            """ network - broadcast """
+            r.zadd('cidr:ipv4', ip.last, ip.first)
+        else:
+            r.setex("ipv4:%s" % ip.network, ttl, 1)
 
 
 def main():
@@ -52,7 +59,7 @@ def main():
 
     parser.add_argument('url', metavar='url',
                         type=unicode,
-                        help="URL containing list of IPv4 or CIDR")
+                        help="URL or file containing list of IPv4 or CIDR")
     parser.add_argument('redis_host', metavar='host',
                         type=unicode, nargs='?', default='localhost',
                         help="redis host to store the IP's, default: localhost")

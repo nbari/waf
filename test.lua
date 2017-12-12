@@ -13,16 +13,16 @@ function iptonumber(str)
     return num
 end
 
+-- test ip's
 local ip = "8.8.8.8"
 local ip = "155.204.0.3"
+local ip = "31.184.238.3"
 local ip_int = iptonumber(ip)
 
-local res, err = client:zrangebyscore("cidr:index", ip_int, "+inf",  "limit", "0", "1")
--- if #res == 0 then return end
-if #res > 0 then
-    local res, err = client:hget("cidr:" .. res[1], "network")
-    if err then return end
-    if ip_int  >= tonumber(res) then
-        print(ip .. " in list")
-    end
+local res, err = client:zrangebyscore("cidr:ipv4", ip_int, "+inf",  "limit", "0", "1")
+if #res == 0 then return end
+if ip_int  >= tonumber(res[1]) then
+    print(ip .. " in list")
+    return
 end
+print(ip .. " not found")

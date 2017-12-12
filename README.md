@@ -37,5 +37,5 @@ Check that the IP is >= the network:
 
 Help:
 
-https://stackoverflow.com/a/9991303/1135424
-https://mblum.me/2016/09/mapping-ip-addresses---sql-vs-redis/
+* https://stackoverflow.com/a/9991303/1135424
+* https://mblum.me/2016/09/mapping-ip-addresses---sql-vs-redis/

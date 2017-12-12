@@ -51,21 +51,18 @@ if last_update_time == nil or last_update_time < ( ngx.now() - cache_ttl ) then
 
         -- check if the IP is in a CIDR range
         local ip_int = iptonumber(ip)
-        local res, err = red:zrangebyscore("cidr:index", ip_int, "+inf", "limit", "0", "1")
+        local res, err = red:zrangebyscore("cidr:ipv4", ip_int, "+inf", "limit", "0", "1")
         if err then
             ngx.log(ngx.DEBUG, "Redis read error while retrieving cidr:index: " .. err);
             return
         end
         -- check if we get a index
-        if #res > 0 then
-            local res, err = client:hget("cidr:" .. res[1], "network")
-            if err then return end
-            if ip_int  >= tonumber(res) then
-                -- add IP to the ip_blacklist dict inheriting the TTL form redis
-                -- need to fix the TTL probably, for now will be set to 1 week
-                ip_blacklist:set(ip, true, 604800);
-                ip_blacklist:set("last_update_time", ngx.now());
-            end
+        if #res == 0 then return end
+        if ip_int  >= tonumber(res[1]) then
+            -- add IP to the ip_blacklist dict inheriting the TTL form redis
+            -- need to fix the TTL probably, for now will be set to 1 day
+            ip_blacklist:set(ip, true, 86400);
+            ip_blacklist:set("last_update_time", ngx.now());
         end
     end
 end
