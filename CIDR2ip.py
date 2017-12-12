@@ -32,10 +32,16 @@ def GetIPs(url, redis_host, redis_port, redis_db, ttl):
         if line:
             ips = ip_re.findall(line)
             if ips:
-                """ Currently only one ip per line """
-                for ip in IPNetwork(ips[0]):
-                    print ip
-                    red.setex(ip, ttl, 1)
+                for i in ips:
+                    ip = IPNetwork(i)
+                    if ip.size > 1:
+                        data = {
+                            "broadcast": int(ip.broadcast),
+                            "network": int(ip.network)
+                        }
+                        if red.hmset("cidr:%s" % i, data):
+                            print i
+                            red.zadd("cidr:index", data['broadcast'], i)
 
 
 def main():
