@@ -8,7 +8,13 @@ Install python netaddr:
 
 Example:
 
-    $ CIDR2ip.py https://www.spamhaus.org/drop/drop.txt
+    $ import.py https://www.spamhaus.org/drop/drop.txt
+
+> smaphaus normaly is a list of CIDR's
+
+    $ import.py https://check.torproject.org/exit-addresses
+
+> tor addresses are /32 this are stored as ip:X.X.X.X
 
 
 Adding CIDR to redis:
