@@ -31,12 +31,22 @@ if last_update_time == nil or last_update_time < ( ngx.now() - cache_ttl ) then
     local ok, err = red:connect(redis_host, redis_port);
     if not ok then
         ngx.log(ngx.DEBUG, "Redis connection error while retrieving ip_blacklist: " .. err);
+        return
     else
+        -- put it into the connection pool of size 100,
+        -- with 10 seconds max idle time
+        local ok, err = red:set_keepalive(10000, 100)
+        if not ok then
+            ngx.say("failed to set keepalive: ", err)
+            return
+        end
+
         local res, err = red:get(redis_pattern .. ip);
         if err then
             ngx.log(ngx.DEBUG, "Redis read error while retrieving ip_blacklist: " .. err);
             return
         end
+
         if res ~= ngx.null then
             local ttl, err = red:ttl(redis_pattern .. ip);
             if not ttl then
